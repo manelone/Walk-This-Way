@@ -50,8 +50,8 @@ class PriorityQueue:
         self.heap = []
         self.priorities = {}  # Map from state to priority
 
-    # Insert |state| into the heap with priority |newPriority| if
-    # |state| isn't in the heap or |newPriority| is smaller than the existing
+    # Insert |state| into the heap with priority |newPriority| if |state| 
+    # isn't in the heap or |newPriority| is smaller than the existing
     # priority.
     # Return whether the priority queue was updated.
     def update(self, state, newPriority):
