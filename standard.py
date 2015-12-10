@@ -1,6 +1,8 @@
 import edge_connects, math, random, collections, heapq, re, sys, time, os, datetime
 
 nodeDict = edge_connects.nodeDict()
+#dictionary from edges to list of times of known crimes (crime type, time) at that edge
+#knownCrimes = edge_connects.readKnownCrimes()
 
 
 RISK_WEIGHT = 4
@@ -34,6 +36,12 @@ class Journey():
  		crimeScore = 0
  		for street in self.path:
  			crimeScore += street.getCrimeScore()
+ 		return crimeScore
+
+ 	def getKnownCrimeScore(self):
+ 		crimeScore = 0
+ 		for street in self.path:
+ 			crimeScore += street.knownCrimeScore(self.startTime)
  		return crimeScore
 
  	def printPath(self):
@@ -130,7 +138,7 @@ def aStarSearch(start, end, startTime):
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
 				
 				print street.getTimedCrimeScore(startTime)
-				cost = math.e**(street.getTimedCrimeScore(startTime) * RISK_WEIGHT)*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
+				cost = (math.e**(street.getTimedCrimeScore(startTime) * RISK_WEIGHT))*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
 				
 				if pq.update(newNode, cost):
 					parentage[newNode] = street
@@ -139,7 +147,7 @@ def aStarSearch(start, end, startTime):
 	return None
 
 
-startTime = time.strptime('Friday,9/26/2014,3:00', "%A,%m/%d/%Y,%H:%M")
+startTime = time.strptime('Friday,10/31/2014,23:30', "%A,%m/%d/%Y,%H:%M")
 formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
 journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
 print ('here\'s our path')
@@ -147,6 +155,6 @@ journey.printPath()
 # print(journey.path)
 print('length: '+ str(journey.getLength()))
 print('total crimes: '+ str(journey.getNumCrimes()))
-print('total crime score: '+ str(journey.getTotalCrimeScore()))
+print('total crime score: '+ str(journey.getKnownCrimeScore()))
 
 
