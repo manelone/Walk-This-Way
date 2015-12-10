@@ -75,10 +75,6 @@ class PriorityQueue:
 
 
 
-
-
-
-
 def aStarSearch(start, end, startTime):
 	"""
 	@param start: (lat, long) coordinates of starting location
