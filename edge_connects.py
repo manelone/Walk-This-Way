@@ -1,5 +1,5 @@
 from pandas import pandas as pd
-import collections, math, random, sys
+import collections, math, random, sys, time, datetime
 from copy import deepcopy
 
 #weights of different types of crimes
@@ -78,6 +78,13 @@ def kmeans(crimes, K, maxIters):
 	return (centroids, assignments)
 
 
+def inRange(start, end, timeString):
+	t = time.strptime(timeString, "%A,%m/%d/%Y,%H:%M")
+	formattedTime = datetime.datetime.fromtimestamp(time.mktime(t))
+	if formattedTime >= start and formattedTime <= end:
+		return True
+	return False
+
 class CrimeStreet():
     def __init__(self, edgeID, start, end, length):
         self.edgeID = edgeID
@@ -99,12 +106,21 @@ class CrimeStreet():
     		regionCrimeScore += regionCrimeScores[centroid]/dist
 		self.regionCrimeScore = regionCrimeScore/NUM_REGIONS
 
+    def getTimedCrimeScore(self, startTime):
+    	start = startTime - datetime.timedelta(minutes=30)
+    	end = startTime + datetime.timedelta(minutes=60)
+    	crimeScore = 0
+    	for crime in self.crimeList:
+    		if inRange(start, end, crime[1]):
+    			crimeScore += CRIME_TYPE_WEIGHTS[crime[0]]
+    	return crimeScore
+
     def getCrimeRegionScore(self):
     	return self.regionCrimeScore
 
     def getCrimeScore(self):
 		if len(self.crimes) == 0: return 0
-		return sum(self.crimes[c] for c in self.crimes)
+		return sum(self.crimes[c] for c in self.crimes) + self.getCrimeRegionScore()
 
     def addCrime(self, crimeOccurence):
     	self.numCrimes += 1

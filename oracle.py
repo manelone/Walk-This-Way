@@ -1,6 +1,30 @@
-import edge_connects, math, random, collections, heapq, re, sys, time, os, random
+import edge_connects, math, random, collections, heapq, re, sys, time, os, datetime
+
+
 
 nodeDict = edge_connects.nodeDict()
+
+
+#To-do: write preprocessing function that creates a dictionary of
+#edges to times of crimes that occur on those edges by reading in a file
+#containing information about which crimes WILL occur in a given period
+
+#dictionary from edges to list of times of known crimes at that edge
+knownCrimes = preprocessKnownCrimeData()
+
+RISK_WEIGHT = 4
+LENGTH_WEIGHT = 1
+
+
+#returns true if any times in the given list of times fall within the range of 
+#of the given time t
+def inRange(t, times):
+	start = t - datetime.timedelta(minutes=30)
+	end = t + datetime.timedelta(minutes=60)
+	for tm in times:
+		if tm >= start and tm <= end:
+			return True
+	return False
 
 class Journey():
 	def __init__(self, path, startTime) :
@@ -73,7 +97,7 @@ class PriorityQueue:
         return (None, None) # Nothing left...
 
 
-def baselineAStarSearch(start, end, startTime):
+def aStarSearch(start, end, startTime):
 	"""
 	@param start: (lat, long) coordinates of starting location
 	@param end: (lat, long) coordinates of ending location
@@ -123,10 +147,14 @@ def baselineAStarSearch(start, end, startTime):
 					newNode = street.start
 				#Heuristic: manhattan distance from currNode to endNode
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
-				#baseline cost is calculate as the sum of the distance, the distance * the number of crimes that occur on that street
-				#and the heuristic distance
-				cost = street.st_length + street.numCrimes * street.st_length + (distance)
+				
+				if street in knownCrimes and inRange(startTime, knownCrimes[street]):
+					crimeScore = 10**12
+				else:
+					crimeScore = 0
 
+				cost = math.e**(street.getTimedCrimeScore(startTime) * RISK_WEIGHT)*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
+				
 				if pq.update(newNode, cost):
 					parentage[newNode] = street
 	
@@ -134,14 +162,14 @@ def baselineAStarSearch(start, end, startTime):
 	return None
 
 
-#score: product of (weighted aggregate crime risk) * (diff in distances btw proposed path and shortest path)
-
-journey = baselineAStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
-print ('here\'s our path')
-journey.printPath()
-# print(journey.path)
-print('length: '+ str(journey.getLength()))
-print('total crimes: '+ str(journey.getNumCrimes()))
-print('total crime score: '+ str(journey.getTotalCrimeScore()))
+# startTime = time.strptime('Monday,10/26/2015,21:40', "%A,%m/%d/%Y,%H:%M")
+# formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
+# journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
+# print ('here\'s our path')
+# journey.printPath()
+# # print(journey.path)
+# print('length: '+ str(journey.getLength()))
+# print('total crimes: '+ str(journey.getNumCrimes()))
+# print('total crime score: '+ str(journey.getTotalCrimeScore()))
 
 

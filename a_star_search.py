@@ -130,7 +130,7 @@ def aStarSearch(start, end, startTime):
 					newNode = street.start
 				#Heuristic: manhattan distance from currNode to endNode
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
-				cost = street.st_length + street.getCrimeScore() * street.st_length + (distance)
+				cost = street.st_length + (distance)
 
 				#print street.getCrimeScore()
 				if pq.update(newNode, cost):
