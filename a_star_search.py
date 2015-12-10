@@ -1,6 +1,5 @@
 import edge_connects, math, random, collections, heapq, re, sys, time, os, random
 
-# streetSet = edge_connects.estStreets()
 nodeDict = edge_connects.nodeDict()
 
 
