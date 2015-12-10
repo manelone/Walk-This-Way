@@ -1,4 +1,6 @@
-import a_star_search, edge_connects, datetime, time
+from a_star_search import aStarSearch
+from ast import literal_eval as make_tuple
+import edge_connects, datetime, time
 
 def simulateJourney(journey):
 	"""
@@ -7,21 +9,23 @@ def simulateJourney(journey):
 	crimes is an list of crimes the journey would encounter (same time, same place)
 	"""
 	crimes = []
-	t = time.strptime(jouney.getStartTime(), "%A,%m/%d/%Y,%H:%M")
-	time = datetime.datetime.fromtimestamp(time.mktime(t))
-	endTime = dt + timedelta(hours=1)
+	t = time.strptime(journey.getStartTime(), "%A,%m/%d/%Y,%H:%M")
+	tm = datetime.datetime.fromtimestamp(time.mktime(t))
+	endTime = tm + datetime.timedelta(hours=1)
 	for street in journey.getPath():
 		# need to calculate the bounds of time that journier is on this street
 		# time (defined outside of loop) currently equals the starting time
-		endTime = time + street.length / walkingSpeed
+		# 
+
+		#endTime = tm + street.length / walkingSpeed
 		# loop through to check which crimes lie within the time bounds
 		# this is slow - we should be able to optimize
 		for crime in street.crimeList :
 			ct = time.strptime(crime[1], "%A,%m/%d/%Y,%H:%M") # need to change this in edge_connects.py
 			crimeTime = datetime.datetime.fromtimestamp(time.mktime(ct))
-			if time <= crimeTime and crimeTime <= endTime:
+			if tm <= crimeTime and crimeTime <= endTime:
 				crimes += crime
-		time = endTime
+		# time = endTime
 
 	return (0, crimes) # eventually first argument shoudl be the distance
 
@@ -40,8 +44,8 @@ def getJourneys(filename, algorithm):
 		lines = f.readlines()
 	for line in lines:
 		triple = line.split()
-		journey = algorithm(triple[0], triple[1], triple[2])
-		journeys += journey
+		journey = algorithm(make_tuple(triple[0]), make_tuple(triple[1]), triple[2])
+		journeys.append(journey)
 	return journeys
 
 
@@ -64,6 +68,9 @@ def simulate(journeys):
 		else :
 			for crime in pair[1] :
 				totalSeverity += crime.severity
+
+	print "Number of journeys: " + str(numJourneys)
+	print "Number of safe journeys: " + str(numSafeJouneys)
 
 def main():	
 	simulate(getJourneys("journeys.txt", aStarSearch))
