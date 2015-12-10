@@ -2,8 +2,10 @@ from pandas import pandas as pd
 import collections, math, random, sys
 from copy import deepcopy
 
+#weights of different types of crimes
 CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2, 'KIDNAPPING':7, 'SEX OFFENSES, NON FORCIBLE':3, 'ASSAULT':9}
 
+#number of regions to divide the city into for k-means clustering
 NUM_REGIONS = 10
 
 edges = pd.read_csv("trimmed_edges.csv")
@@ -21,10 +23,6 @@ def kmeans(crimes, K, maxIters):
             list of assignments, (i.e. if crimes[i] belongs to centers[j], then assignments[i] = j)
             final reconstruction loss)
     '''
-
-    #returns manhattan distance between two points (a, b) and (x, y)
-	#def getDistance(a, b):
-	#	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
 
     #returns the index of the closest centroid to the given crime's location
 	def closestCentroid (centroids, example):
@@ -76,12 +74,8 @@ def kmeans(crimes, K, maxIters):
 			if assignments.count(k) != 0:
 				newValue = (oldValue[0]/(assignments.count(k)*1.0), oldValue[1]/(assignments.count(k)*1.0))
 			centroids[k] = newValue
-   		
-	reconstructionLoss = 0
-	for i in range(numCrimes):
-	    reconstructionLoss += getDistance(crimes[i][0], centroids[assignments[i]])
 
-	return (centroids, assignments, reconstructionLoss)
+	return (centroids, assignments)
 
 
 class CrimeStreet():
@@ -96,23 +90,23 @@ class CrimeStreet():
 
     #regionScore is avg of crime score of hotspot / distance of street from hotspot over all hotspots
     #weighted by the distance to that hotspot
-    #region crimeScores is a dictionary of locations to their scores
+    #regionCrimeScores is a dictionary of locations to their scores
     def setRegionScore(self, regionCrimeScores):
     	regionCrimeScore = 0
     	for centroid in regionCrimeScores.keys():
     		dist = self.distFromStreet(centroid)
     		regionCrimeScore += regionCrimeScores[centroid]/dist
 		self.regionCrimeScore = regionCrimeScore/NUM_REGIONS
-		print self.regionCrimeScore
 
     def getCrimeRegionScore(self):
     	return self.regionCrimeScore
 
-	def getCrimeScore(self):
+    def getCrimeScore(self):
 		if len(self.crimes) == 0: return 0
 		return sum(self.crimes[c] for c in self.crimes)
 
     def addCrime(self, crimeOccurence):
+    	#self.crimes[crimeOccurence[0]] += 1
     	self.crimes[crimeOccurence[0]] += CRIME_TYPE_WEIGHTS[crimeOccurence[0]]
     	self.crimeList.append(crimeOccurence)
 
@@ -154,7 +148,7 @@ def estStreets():
 	
 	print 'added crimes to streets and established crimesList for k-means clustering'
 
-	hotspots, assignments, reconstructionLoss = kmeans(crimesList, NUM_REGIONS, 10)
+	hotspots, assignments = kmeans(crimesList, NUM_REGIONS, 10)
 	
 	print 'established 10 crime hotspot assignments using k-means clustering'
 	
@@ -164,33 +158,26 @@ def estStreets():
 		hotspot = hotspots[assignments[i]]
 		crime = crimesList[i][1]
 		crimeLoc = crimesList[i][0]
-		hotspotCrimeScores[hotspot] += (CRIME_TYPE_WEIGHTS[crime]/(getDistance(hotspot, crimeLoc)+.0001))
+		hotspotCrimeScores[hotspot] += (CRIME_TYPE_WEIGHTS[crime]/(getDistance(hotspot, crimeLoc)+1))
 
 	for i in range(len(hotspots)):
-		hotspotCrimeScores[hotspots[i]] /= (assignments.count(i)*1.0)
+		if assignments.count(i) > 0:
+			hotspotCrimeScores[hotspots[i]] /= (assignments.count(i)*1.0)
 
 	print 'updated hotspot scores'
 
 	for edge in streets:
 		streets[edge].setRegionScore(hotspotCrimeScores)
-		print ('self: '+ str(streets[edge].getCrimeScore()) + '	region: ' + str(streets[edge].CrimeRegionScore()))
+
+	print 'updated crimeRegionScore for each crimeStreet'
 
 	return streets
 
 def nodeDict():
-	# stEdges = pd.read_csv("cal.cedge.csv")
-	# stNodes = pd.read_csv("cal.cnode.csv")
-
-	# nodes = stNodes.as_matrix()
 	edge_dict = {}
 	streets = estStreets()
-	# for i, edge in edges.iterrows():
 	for st in streets:
 		edge = streets[st]
-		# start = int(edge['startID'])
-		# end = int(edge['endID'])
-		# startCoords = (float(nodes[start][2]), float(nodes[start][1]))
-		# endCoords = (float(nodes[end][2]), float(nodes[end][1]))
 		startCoords = edge.start #eval(edge['startCoords'])
 		endCoords = edge.end #eval(edge['endCoords'])
 		if startCoords[1] > -121.888 or startCoords[1] < -122.729: 
@@ -201,7 +188,6 @@ def nodeDict():
 			continue
 		if endCoords[0] > 38.5 or endCoords[0] < 37.5:
 			continue
-		#edgeSt = CrimeStreet(edge['EdgeID'], eval(edge['startCoords']), eval(edge['endCoords']), float(edge['distance']))
 		if startCoords not in edge_dict:
 			edge_dict[startCoords] = set([edge])
 		else:
@@ -212,7 +198,7 @@ def nodeDict():
 			edge_dict[endCoords].add(edge)
 	return edge_dict
 
-edge_dict = nodeDict()
+#edge_dict = nodeDict()
 #print sum(1.0*len(edge_dict[node]) for node in edge_dict) / len(edge_dict.keys())
 
 # streets = estStreets()
