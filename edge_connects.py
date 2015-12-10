@@ -2,19 +2,15 @@ from pandas import pandas as pd
 import collections, math, random, sys
 from copy import deepcopy
 
+CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2, 'KIDNAPPING':7, 'SEX OFFENSES, NON FORCIBLE':3, 'ASSAULT':9}
 
-ROBBERY = 5
-SEX OFFENSES, FORCIBLE = 6
-DRUG/NARCOTIC = 2
-KIDNAPPING = 7
-SEX OFFENSES, NON FORCIBLE = 3
-ASSAULT = 9
-
+NUM_REGIONS = 10
 
 edges = pd.read_csv("trimmed_edges.csv")
 crimes = pd.read_csv("crimes_with_streets.csv")
 
-
+def getDistance(a,b):
+	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
 
 def kmeans(crimes, K, maxIters):
 	'''
@@ -27,8 +23,8 @@ def kmeans(crimes, K, maxIters):
     '''
 
     #returns manhattan distance between two points (a, b) and (x, y)
-	def getDistance(a, b):
-		return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
+	#def getDistance(a, b):
+	#	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
 
     #returns the index of the closest centroid to the given crime's location
 	def closestCentroid (centroids, example):
@@ -98,20 +94,16 @@ class CrimeStreet():
        	self.crimeList = []
        	self.regionCrimeScore = 0
 
-    #region score is crime score of nearest crime hotspot weighted by the distance to that hotspot
+    #regionScore is avg of crime score of hotspot / distance of street from hotspot over all hotspots
+    #weighted by the distance to that hotspot
     #region crimeScores is a dictionary of locations to their scores
     def setRegionScore(self, regionCrimeScores):
-    	#find closest centroid
-		minDistance = sys.maxint
-		closest = 0
-		for centroid in regionCrimesScores.keys():
-			dist = self.distanceFromStreet(centroid)
-			if dist < minDistance:
-				closest = centroid
-				minDistance = dist
-		#TO-DO: properly weight regionCrimeScore against distance from region
-		regionCrimeScore = regionCrimeScores[closest] / minDistance 
-		self.regionCrimeScore = regionCrimeScore
+    	regionCrimeScore = 0
+    	for centroid in regionCrimeScores.keys():
+    		dist = self.distFromStreet(centroid)
+    		regionCrimeScore += regionCrimeScores[centroid]/dist
+		self.regionCrimeScore = regionCrimeScore/NUM_REGIONS
+		print self.regionCrimeScore
 
     def getCrimeRegionScore(self):
     	return self.regionCrimeScore
@@ -121,7 +113,7 @@ class CrimeStreet():
 		return sum(self.crimes[c] for c in self.crimes)
 
     def addCrime(self, crimeOccurence):
-    	self.crimes[crimeOccurence[0]] += 1
+    	self.crimes[crimeOccurence[0]] += CRIME_TYPE_WEIGHTS[crimeOccurence[0]]
     	self.crimeList.append(crimeOccurence)
 
     def distFromStreet(self, loc):
@@ -152,27 +144,36 @@ def estStreets():
 	    streets[e['EdgeID']] = curr
 	print 'established streets as CrimeStreet vars'
 	
-	print len(streets)
-
 	crimesList = []
 
 	for i, crime in crimes.iterrows():
 		e = crime['StreetMatch']
-		streets[e].addCrime((crime['Category'],crime['Time']))
-
-		crimesList.append((eval(crime['Location']),e))
+		timeString = crime['DayOfWeek']+ ',' + crime['Date']+ ',' +crime['Time']
+		streets[e].addCrime((crime['Category'],timeString))
+		crimesList.append((eval(crime['Location']),crime['Category']))
+	
 	print 'added crimes to streets and established crimesList for k-means clustering'
-	print len(crimesList)
 
-	hotspots, assignments, reconstructionLoss = kmeans(crimesList, 10, 10)
+	hotspots, assignments, reconstructionLoss = kmeans(crimesList, NUM_REGIONS, 10)
+	
 	print 'established 10 crime hotspot assignments using k-means clustering'
 	
-	#TO-DO: write the function below
-	#regionCrimeScores = establishRegionCrimeScore(assingments)
-		#something along the lines of sum of weighted crimes / number of of crimes in cluster
+	
+	hotspotCrimeScores = collections.Counter()
+	for i in range(len(assignments)):
+		hotspot = hotspots[assignments[i]]
+		crime = crimesList[i][1]
+		crimeLoc = crimesList[i][0]
+		hotspotCrimeScores[hotspot] += (CRIME_TYPE_WEIGHTS[crime]/(getDistance(hotspot, crimeLoc)+.0001))
+
+	for i in range(len(hotspots)):
+		hotspotCrimeScores[hotspots[i]] /= (assignments.count(i)*1.0)
+
+	print 'updated hotspot scores'
 
 	for edge in streets:
-		streets[edge].setRegionScore(regionCrimeScores)
+		streets[edge].setRegionScore(hotspotCrimeScores)
+		print ('self: '+ str(streets[edge].getCrimeScore()) + '	region: ' + str(streets[edge].CrimeRegionScore()))
 
 	return streets
 
