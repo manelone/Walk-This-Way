@@ -85,8 +85,8 @@ class CrimeStreet():
         self.start = start
         self.end = end
         self.st_length = length
-        self.crimes = collections.Counter()
-        self.regionCrimeScore = 0
+       	self.crimes = collections.Counter()
+       	self.regionCrimeScore = 0
 
     #region score is crime score of nearest crime hotspot weighted by the distance to that hotspot
     #region crimeScores is a dictionary of locations to their scores
@@ -101,7 +101,7 @@ class CrimeStreet():
 				minDistance = dist
 		#TO-DO: properly weight regionCrimeScore against distance from region
 		regionCrimeScore = regionCrimeScores[closest] / minDistance 
-    	self.regionCrimeScore = regionCrimeScore
+		self.regionCrimeScore = regionCrimeScore
 
     def getCrimeRegionScore(self):
     	return self.regionCrimeScore
@@ -159,8 +159,8 @@ def estStreets():
 	#regionCrimeScores = establishRegionCrimeScore(assingments)
 		#something along the lines of sum of weighted crimes / number of of crimes in cluster
 
-	for edge, crimeStreet in streets:
-		crimeStreet.setRegionScore(regionCrimeScores)
+	for edge in streets:
+		streets[edge].setRegionScore(regionCrimeScores)
 
 	return streets
 
