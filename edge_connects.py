@@ -9,8 +9,8 @@ CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2,
 NUM_REGIONS = 10
 
 edges = pd.read_csv("trimmed_edges.csv")
-crimes = pd.read_csv("crimes_with_streets.csv")
-#crimes = pd.read_csv("mini_crimes_set.csv")
+#crimes = pd.read_csv("crimes_with_streets.csv")
+crimes = pd.read_csv("mini_crimes_set.csv")
 testCrimes = pd.read_csv("test_crime_data.csv")
 
 #a dictionary from edgeIDs to CrimeStreetObjects

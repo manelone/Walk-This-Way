@@ -1,4 +1,4 @@
-from a_star_search import aStarSearch
+from a_star_search import AStarSearch
 from ast import literal_eval as make_tuple
 import edge_connects, datetime, time
 
@@ -21,7 +21,7 @@ def simulateJourney(journey):
 		# loop through to check which crimes lie within the time bounds
 		# this is slow - we should be able to optimize
 		for crime in street.crimeList :
-			ct = time.strptime(crime[1], "%A,%m/%d/%Y,%H:%M") # need to change this in edge_connects.py
+			ct = time.strptime(crime[1], "%A,%m/%d/%y,%H:%M") # need to change this in edge_connects.py
 			crimeTime = datetime.datetime.fromtimestamp(time.mktime(ct))
 			if tm <= crimeTime and crimeTime <= endTime:
 				crimes += crime
@@ -73,7 +73,9 @@ def simulate(journeys):
 	print "Number of safe journeys: " + str(numSafeJouneys)
 
 def main():	
-	simulate(getJourneys("journeys.txt", aStarSearch))
+	astar = AStarSearch()
+	algorithm = astar.getAlgorithm()
+	simulate(getJourneys("journeys.txt", algorithm))
 
 if __name__ == '__main__':
 	main()
