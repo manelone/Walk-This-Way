@@ -96,7 +96,7 @@ def aStarSearch(start, end, startTime):
 				currNode = street.end
 			else:
 				currNode = street.start
-		return Journey(currPath, 0)
+		return Journey(currPath, startTime)
 
 	visitedNodes = []
 	pq = PriorityQueue()
@@ -123,7 +123,7 @@ def aStarSearch(start, end, startTime):
 					newNode = street.end
 				else:
 					newNode = street.start
-				#Heuristic: distance from currNode to endNode
+				#Heuristic: manhattan distance from currNode to endNode
 				distance = (end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1])
 				cost = street.st_length + street.getCrimeScore() * street.st_length + (distance)
 
