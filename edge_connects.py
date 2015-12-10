@@ -9,12 +9,15 @@ CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2,
 NUM_REGIONS = 10
 
 edges = pd.read_csv("trimmed_edges.csv")
-crimes = pd.read_csv("crimes_with_streets.csv")
-#crimes = pd.read_csv("mini_crimes_set.csv")
+#crimes = pd.read_csv("crimes_with_streets.csv")
+crimes = pd.read_csv("mini_crimes_set.csv")
 testCrimes = pd.read_csv("test_crime_data.csv")
 
 #a dictionary from edgeIDs to CrimeStreetObjects
 streets = {}
+
+#a dictionary from crimeStreets to a list of known crimes read in from testCrimes (crime type, time)
+knownCrimes = {}
 
 def getDistance(a,b):
 	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
@@ -43,7 +46,8 @@ def kmeans(crimes, K, maxIters):
 	numCrimes = len(crimes)
 
     #initialize random centroids and assingment list
-	c = random.sample(crimes, K)
+	#c = random.sample(crimes, K)
+	c = [crimes[1],crimes[10],crimes[20],crimes[21],crimes[90],crimes[101],crimes[8],crimes[33],crimes[12],crimes[87] ]
 	centroids = [0]*K
 	for i in range(K):
 		centroids[i] = deepcopy(c[i][0])
@@ -115,13 +119,34 @@ class CrimeStreet():
 	#getTimedCrimeScore returns the sum of the regional crimes score as well as the weighted crimes
 	#that occur during a given time period surrounding the startTime
     def getTimedCrimeScore(self, startTime):
-    	start = startTime - datetime.timedelta(minutes=30)
-    	end = startTime + datetime.timedelta(minutes=60)
     	crimeScore = 0
-    	for crime in self.crimeList:
-    		if inRange(start, end, crime[1]):
-    			crimeScore += CRIME_TYPE_WEIGHTS[crime[0]]
+    	for i in range(2003,2014):
+    		diff = startTime.year - i
+    		numWeeks = diff * 72
+    		standardStartTime = startTime - datetime.timedelta(weeks=numWeeks)
+    		start = standardStartTime - datetime.timedelta(minutes=30)
+    		end = standardStartTime + datetime.timedelta(minutes=60)
+    		crimeScore = 0
+    		for crime in self.crimeList:
+    			if inRange(start, end, crime[1]):
+    				crimeScore += CRIME_TYPE_WEIGHTS[crime[0]]
+    	crimeScore /= 1.0*11
     	return crimeScore + self.regionCrimeScore
+
+    def knownCrimeScore(self, startTime):
+    	crimeScore = 0
+    	if self in knownCrimes.keys():
+    		crimes = knownCrimes[self]
+    		start = startTime - datetime.timedelta(minutes=30)
+    		end = startTime + datetime.timedelta(minutes=60)
+    		for crime in crimes:
+    			crimeType = crime[0]
+    			crimeTime = crime[1]
+    			if crimeTime>=start and crimeTime <=end:
+    				print crime
+    				crimeScore += CRIME_TYPE_WEIGHTS[crimeType]
+    	return crimeScore
+
 
     #returns regional crime score
     def getregionCrimeScore(self):
@@ -233,13 +258,16 @@ def nodeDict():
 			edge_dict[endCoords] = set([edge])
 		else:
 			edge_dict[endCoords].add(edge)
+
+	readKnownCrimes()
 	return edge_dict
 
 
 #creates a dictionary from CrimeStreets to a list of crime type/datetimes tuples
 #that represent crimes and the times they were committed on that street
+#{CrimeStreet:(Type, Datetime)}
 def readKnownCrimes():
-	knownCrimes = {}
+	
 	for i, crime in testCrimes.iterrows():
 		e = crime['StreetMatch']
 		timeString = crime['DayOfWeek']+ ',' + crime['Date']+ ',' +crime['Time']
@@ -249,11 +277,13 @@ def readKnownCrimes():
 		tm = time.strptime(timeString, "%A,%m/%d/%y,%H:%M")
 		formattedTm = datetime.datetime.fromtimestamp(time.mktime(tm))
 		knownCrimes[street].append((crime['Category'],formattedTm))
+
 	print 'finished reading crime_test_data'
-	return knownCrimes
+	#return knownCrimes
 
 
 #edge_dict = nodeDict()
+#knownCrimes = readKnownCrimes()
 #print sum(1.0*len(edge_dict[node]) for node in edge_dict) / len(edge_dict.keys())
 
 # streets = estStreets()
