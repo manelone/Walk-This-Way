@@ -136,12 +136,12 @@ def baselineAStarSearch(start, end, startTime):
 
 #score: product of (weighted aggregate crime risk) * (diff in distances btw proposed path and shortest path)
 
-journey = baselineAStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
-print ('here\'s our path')
-journey.printPath()
-# print(journey.path)
-print('length: '+ str(journey.getLength()))
-print('total crimes: '+ str(journey.getNumCrimes()))
-print('total crime score: '+ str(journey.getTotalCrimeScore()))
+# journey = baselineAStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
+# print ('here\'s our path')
+# journey.printPath()
+# # print(journey.path)
+# print('length: '+ str(journey.getLength()))
+# print('total crimes: '+ str(journey.getNumCrimes()))
+# print('total crime score: '+ str(journey.getTotalCrimeScore()))
 
 

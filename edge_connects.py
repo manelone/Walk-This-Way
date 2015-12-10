@@ -9,7 +9,11 @@ CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2,
 NUM_REGIONS = 10
 
 edges = pd.read_csv("trimmed_edges.csv")
-crimes = pd.read_csv("crimes_with_streets.csv")
+#crimes = pd.read_csv("crimes_with_streets.csv")
+crimes = pd.read_csv("mini_crimes_set.csv")
+testCrimes = pd.read_csv("test_crime_data.csv")
+
+streets = {}
 
 def getDistance(a,b):
 	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
@@ -79,7 +83,7 @@ def kmeans(crimes, K, maxIters):
 
 
 def inRange(start, end, timeString):
-	t = time.strptime(timeString, "%A,%m/%d/%Y,%H:%M")
+	t = time.strptime(timeString, "%A,%m/%d/%y,%H:%M")
 	formattedTime = datetime.datetime.fromtimestamp(time.mktime(t))
 	if formattedTime >= start and formattedTime <= end:
 		return True
@@ -148,7 +152,6 @@ class CrimeStreet():
 
 
 def estStreets():
-	streets = {}
 	for edge in edges.iterrows():
 	    e = edge[1]
 	    curr = CrimeStreet(e['EdgeID'], eval(e['startCoords']), eval(e['endCoords']), float(e['distance']))
@@ -187,11 +190,11 @@ def estStreets():
 
 	print 'updated crimeRegionScore for each crimeStreet'
 
-	return streets
+	#return streets
 
 def nodeDict():
 	edge_dict = {}
-	streets = estStreets()
+	estStreets()
 	for st in streets:
 		edge = streets[st]
 		startCoords = edge.start #eval(edge['startCoords'])
@@ -213,6 +216,24 @@ def nodeDict():
 		else:
 			edge_dict[endCoords].add(edge)
 	return edge_dict
+
+
+#creates a dictionary from CrimeStreets to a list of crime type/datetimes tuples
+#that represent crimes and the times they were committed on that street
+def readKnownCrimes():
+	knownCrimes = {}
+	for i, crime in testCrimes.iterrows():
+		e = crime['StreetMatch']
+		timeString = crime['DayOfWeek']+ ',' + crime['Date']+ ',' +crime['Time']
+		street = streets[e]
+		if street not in knownCrimes.keys():
+			knownCrimes[street] = []
+		tm = time.strptime(timeString, "%A,%m/%d/%y,%H:%M")
+		formattedTm = datetime.datetime.fromtimestamp(time.mktime(tm))
+		knownCrimes[street].append((crime['Category'],formattedTm))
+	print 'finished reading crime_test_data'
+	return knownCrimes
+
 
 #edge_dict = nodeDict()
 #print sum(1.0*len(edge_dict[node]) for node in edge_dict) / len(edge_dict.keys())
