@@ -1,8 +1,6 @@
 import edge_connects, math, random, collections, heapq, re, sys, time, os, random
 
-# streetSet = edge_connects.estStreets()
 nodeDict = edge_connects.nodeDict()
-
 
 class Journey():
 	def __init__(self, path, startTime) :
@@ -75,12 +73,7 @@ class PriorityQueue:
         return (None, None) # Nothing left...
 
 
-
-
-
-
-
-def aStarSearch(start, end, startTime):
+def baselineAStarSearch(start, end, startTime):
 	"""
 	@param start: (lat, long) coordinates of starting location
 	@param end: (lat, long) coordinates of ending location
@@ -101,7 +94,7 @@ def aStarSearch(start, end, startTime):
 				currNode = street.end
 			else:
 				currNode = street.start
-		return Journey(currPath, startTime)
+		return Journey(currPath, 0)
 
 	visitedNodes = []
 	pq = PriorityQueue()
@@ -130,9 +123,10 @@ def aStarSearch(start, end, startTime):
 					newNode = street.start
 				#Heuristic: manhattan distance from currNode to endNode
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
-				cost = street.st_length + street.getCrimeScore() * street.st_length + (distance)
+				#baseline cost is calculate as the sum of the distance, the distance * the number of crimes that occur on that street
+				#and the heuristic distance
+				cost = street.st_length + street.numCrimes * street.st_length + (distance)
 
-				#print street.getCrimeScore()
 				if pq.update(newNode, cost):
 					parentage[newNode] = street
 	
@@ -140,13 +134,14 @@ def aStarSearch(start, end, startTime):
 	return None
 
 
+#score: product of (weighted aggregate crime risk) * (diff in distances btw proposed path and shortest path)
 
-# journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
-# print ('here\'s our path')
-# journey.printPath()
-# # print(journey.path)
-# print('length: '+ str(journey.getLength()))
-# print('total crimes: '+ str(journey.getNumCrimes()))
-# print('total crime score: '+ str(journey.getTotalCrimeScore()))
+journey = baselineAStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
+print ('here\'s our path')
+journey.printPath()
+# print(journey.path)
+print('length: '+ str(journey.getLength()))
+print('total crimes: '+ str(journey.getNumCrimes()))
+print('total crime score: '+ str(journey.getTotalCrimeScore()))
 
 
