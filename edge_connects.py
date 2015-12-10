@@ -2,6 +2,15 @@ from pandas import pandas as pd
 import collections, math, random, sys
 from copy import deepcopy
 
+
+ROBBERY = 5
+SEX OFFENSES, FORCIBLE = 6
+DRUG/NARCOTIC = 2
+KIDNAPPING = 7
+SEX OFFENSES, NON FORCIBLE = 3
+ASSAULT = 9
+
+
 edges = pd.read_csv("trimmed_edges.csv")
 crimes = pd.read_csv("crimes_with_streets.csv")
 
@@ -86,6 +95,7 @@ class CrimeStreet():
         self.end = end
         self.st_length = length
        	self.crimes = collections.Counter()
+       	self.crimeList = []
        	self.regionCrimeScore = 0
 
     #region score is crime score of nearest crime hotspot weighted by the distance to that hotspot
@@ -110,8 +120,9 @@ class CrimeStreet():
 		if len(self.crimes) == 0: return 0
 		return sum(self.crimes[c] for c in self.crimes)
 
-    def addCrime(self, type):
-    	self.crimes[type] += 1
+    def addCrime(self, crimeOccurence):
+    	self.crimes[crimeOccurence[0]] += 1
+    	self.crimeList.append(crimeOccurence)
 
     def distFromStreet(self, loc):
     	slope = (self.end[1]-self.start[1]) / (self.end[0]-self.start[0])
@@ -147,7 +158,8 @@ def estStreets():
 
 	for i, crime in crimes.iterrows():
 		e = crime['StreetMatch']
-		streets[e].addCrime(crime['Category'])
+		streets[e].addCrime((crime['Category'],crime['Time']))
+
 		crimesList.append((eval(crime['Location']),e))
 	print 'added crimes to streets and established crimesList for k-means clustering'
 	print len(crimesList)
