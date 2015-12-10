@@ -1,4 +1,4 @@
-import a_star_search, edge_connects, time
+import a_star_search, edge_connects, datetime, time
 
 def simulateJourney(journey):
 	"""
@@ -7,8 +7,9 @@ def simulateJourney(journey):
 	crimes is an list of crimes the journey would encounter (same time, same place)
 	"""
 	crimes = []
-	time = jouney.getStartTime()
-	endTime = time + timedelta(hours=1)
+	t = time.strptime(jouney.getStartTime(), "%A,%m/%d/%Y,%H:%M")
+	time = datetime.datetime.fromtimestamp(time.mktime(t))
+	endTime = dt + timedelta(hours=1)
 	for street in journey.getPath():
 		# need to calculate the bounds of time that journier is on this street
 		# time (defined outside of loop) currently equals the starting time
@@ -16,8 +17,9 @@ def simulateJourney(journey):
 		# loop through to check which crimes lie within the time bounds
 		# this is slow - we should be able to optimize
 		for crime in street.crimeList :
-			crimeTime = time.strptime(crime[1], "%A,%m/%d/%Y,%H:%M") # need to change this in edge_connects.py
-			if time <= crimeTime and crimeTime <= endTime
+			ct = time.strptime(crime[1], "%A,%m/%d/%Y,%H:%M") # need to change this in edge_connects.py
+			crimeTime = datetime.datetime.fromtimestamp(time.mktime(ct))
+			if time <= crimeTime and crimeTime <= endTime:
 				crimes += crime
 		time = endTime
 
@@ -35,12 +37,12 @@ def getJourneys(filename, algorithm):
 	"""
 	journeys = []
 	with open(filename) as f:
-    	lines = f.readlines()
-    for line in lines:
-    	triple = line.split()
-    	journey = algorithm(triple[0], triple[1], triple[2])
-    	journeys += journey
-    return journeys
+		lines = f.readlines()
+	for line in lines:
+		triple = line.split()
+		journey = algorithm(triple[0], triple[1], triple[2])
+		journeys += journey
+	return journeys
 
 
 
@@ -64,7 +66,7 @@ def simulate(journeys):
 				totalSeverity += crime.severity
 
 def main():	
-	simulate(getJourneys("journeys.txt"))
+	simulate(getJourneys("journeys.txt", aStarSearch))
 
 if __name__ == '__main__':
 	main()
