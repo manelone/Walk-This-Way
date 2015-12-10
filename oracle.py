@@ -4,13 +4,8 @@ import edge_connects, math, random, collections, heapq, re, sys, time, os, datet
 
 nodeDict = edge_connects.nodeDict()
 
-
-#To-do: write preprocessing function that creates a dictionary of
-#edges to times of crimes that occur on those edges by reading in a file
-#containing information about which crimes WILL occur in a given period
-
-#dictionary from edges to list of times of known crimes at that edge
-knownCrimes = preprocessKnownCrimeData()
+#dictionary from edges to list of times of known crimes (crime type, time) at that edge
+knownCrimes = edge_connects.readKnownCrimes()
 
 RISK_WEIGHT = 4
 LENGTH_WEIGHT = 1
@@ -22,7 +17,7 @@ def inRange(t, times):
 	start = t - datetime.timedelta(minutes=30)
 	end = t + datetime.timedelta(minutes=60)
 	for tm in times:
-		if tm >= start and tm <= end:
+		if tm[1] >= start and tm[1] <= end:
 			return True
 	return False
 
@@ -149,11 +144,12 @@ def aStarSearch(start, end, startTime):
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
 				
 				if street in knownCrimes and inRange(startTime, knownCrimes[street]):
-					crimeScore = 10**12
+					crimeScore =100
 				else:
 					crimeScore = 0
 
-				cost = math.e**(street.getTimedCrimeScore(startTime) * RISK_WEIGHT)*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
+				print ('edge: ' + str(street.edgeID) + ' score: ' + str(crimeScore))
+				cost = math.e**(crimeScore * RISK_WEIGHT)*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
 				
 				if pq.update(newNode, cost):
 					parentage[newNode] = street
@@ -162,14 +158,14 @@ def aStarSearch(start, end, startTime):
 	return None
 
 
-# startTime = time.strptime('Monday,10/26/2015,21:40', "%A,%m/%d/%Y,%H:%M")
-# formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
-# journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
-# print ('here\'s our path')
-# journey.printPath()
-# # print(journey.path)
-# print('length: '+ str(journey.getLength()))
-# print('total crimes: '+ str(journey.getNumCrimes()))
-# print('total crime score: '+ str(journey.getTotalCrimeScore()))
+startTime = time.strptime('Friday,10/16/2015,22:00', "%A,%m/%d/%Y,%H:%M")
+formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
+journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
+print ('here\'s our path')
+journey.printPath()
+# print(journey.path)
+print('length: '+ str(journey.getLength()))
+print('total crimes: '+ str(journey.getNumCrimes()))
+print('total crime score: '+ str(journey.getTotalCrimeScore()))
 
 

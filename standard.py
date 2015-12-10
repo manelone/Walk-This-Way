@@ -1,6 +1,5 @@
 import edge_connects, math, random, collections, heapq, re, sys, time, os, datetime
 
-# streetSet = edge_connects.estStreets()
 nodeDict = edge_connects.nodeDict()
 
 
@@ -130,9 +129,9 @@ def aStarSearch(start, end, startTime):
 				#Heuristic: manhattan distance from currNode to endNode
 				distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
 				
+				print street.getTimedCrimeScore(startTime)
 				cost = math.e**(street.getTimedCrimeScore(startTime) * RISK_WEIGHT)*street.st_length**LENGTH_WEIGHT + distance**LENGTH_WEIGHT
 				
-				#print street.getCrimeScore()
 				if pq.update(newNode, cost):
 					parentage[newNode] = street
 	
@@ -140,7 +139,7 @@ def aStarSearch(start, end, startTime):
 	return None
 
 
-startTime = time.strptime('Monday,10/26/2015,21:40', "%A,%m/%d/%Y,%H:%M")
+startTime = time.strptime('Friday,9/26/2014,3:00', "%A,%m/%d/%Y,%H:%M")
 formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
 journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
 print ('here\'s our path')
