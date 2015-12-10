@@ -87,6 +87,7 @@ class CrimeStreet():
        	self.crimes = collections.Counter()
        	self.crimeList = []
        	self.regionCrimeScore = 0
+       	self.numCrimes = 0
 
     #regionScore is avg of crime score of hotspot / distance of street from hotspot over all hotspots
     #weighted by the distance to that hotspot
@@ -106,7 +107,7 @@ class CrimeStreet():
 		return sum(self.crimes[c] for c in self.crimes)
 
     def addCrime(self, crimeOccurence):
-    	#self.crimes[crimeOccurence[0]] += 1
+    	self.numCrimes += 1
     	self.crimes[crimeOccurence[0]] += CRIME_TYPE_WEIGHTS[crimeOccurence[0]]
     	self.crimeList.append(crimeOccurence)
 
@@ -151,7 +152,6 @@ def estStreets():
 	hotspots, assignments = kmeans(crimesList, NUM_REGIONS, 10)
 	
 	print 'established 10 crime hotspot assignments using k-means clustering'
-	
 	
 	hotspotCrimeScores = collections.Counter()
 	for i in range(len(assignments)):
