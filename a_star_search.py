@@ -30,6 +30,9 @@ class Journey():
 
  	def printPath(self):
  		path = ""
+ 		if len(self.path) > 0:
+ 			p = self.path[0]
+ 			path += str(p.start) + ' '
  		for p in self.path:
  			path += str(p.edgeID) + ' to '
  		path += str(p.end)

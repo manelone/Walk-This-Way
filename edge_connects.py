@@ -1,8 +1,82 @@
 from pandas import pandas as pd
-import collections, math, random
+import collections, math, random, sys
+from copy import deepcopy
 
 edges = pd.read_csv("trimmed_edges.csv")
 crimes = pd.read_csv("crimes_with_streets.csv")
+
+
+
+def kmeans(crimes, K, maxIters):
+	'''
+    crimes: list of crime location and closest street pairs, ((lat, long), closestEdge)
+    K: number of desired clusters. Assume that 0 < K <= |examples|.
+    maxIters: maximum number of iterations to run for (you should terminate early if the algorithm converges).
+    Return: (length K list of cluster centroids,
+            list of assignments, (i.e. if crimes[i] belongs to centers[j], then assignments[i] = j)
+            final reconstruction loss)
+    '''
+
+    #returns manhattan distance between two points (a, b) and (x, y)
+	def getDistance(a, b):
+		return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
+
+    #returns the index of the closest centroid to the given crime's location
+	def closestCentroid (centroids, example):
+		minDistance = sys.maxint
+		closest = 0
+		for i in range(K):
+			dist = getDistance(centroids[i], example[0])
+			if dist < minDistance:
+				closest = i
+				minDistance = dist
+		return closest
+
+	numCrimes = len(crimes)
+
+    #initialize random centroids and assingment list
+	c = random.sample(crimes, K)
+	centroids = [0]*K
+	for i in range(K):
+		centroids[i] = deepcopy(c[i][0])
+	assignments = [0] * numCrimes
+
+    #run k-means clustering 
+	for iteration in range(maxIters):
+    	#keep track of original assignments
+		oldAssignments = list(assignments)
+    	
+    	#update assignments
+		for i in range(numCrimes):
+			assignments[i] = closestCentroid(centroids, crimes[i])
+
+    	#check for convergence
+		if assignments == oldAssignments:
+			break
+
+    	#clear centroid values:
+		for i in range(K):
+			centroids [i] = (0,0)
+
+    	#update centroids through addition:
+		for j in range(numCrimes):
+			oldValue = centroids[assignments[j]]
+			newValue = (oldValue[0]+crimes[j][0][0], oldValue[1]+crimes[j][0][1])
+			centroids[assignments[j]] = newValue
+
+    	#update centroids through division
+		for k in range(K):
+			oldValue = centroids[k]
+			newValue = oldValue
+			if assignments.count(k) != 0:
+				newValue = (oldValue[0]/(assignments.count(k)*1.0), oldValue[1]/(assignments.count(k)*1.0))
+			centroids[k] = newValue
+   		
+	reconstructionLoss = 0
+	for i in range(numCrimes):
+	    reconstructionLoss += getDistance(crimes[i][0], centroids[assignments[i]])
+
+	return (centroids, assignments, reconstructionLoss)
 
 
 class CrimeStreet():
@@ -12,10 +86,29 @@ class CrimeStreet():
         self.end = end
         self.st_length = length
         self.crimes = collections.Counter()
+        self.regionCrimeScore = 0
 
-    def getCrimeScore(self):
-        if len(self.crimes) == 0: return 0
-        return sum(self.crimes[c] for c in self.crimes)
+    #region score is crime score of nearest crime hotspot weighted by the distance to that hotspot
+    #region crimeScores is a dictionary of locations to their scores
+    def setRegionScore(self, regionCrimeScores):
+    	#find closest centroid
+		minDistance = sys.maxint
+		closest = 0
+		for centroid in regionCrimesScores.keys():
+			dist = self.distanceFromStreet(centroid)
+			if dist < minDistance:
+				closest = centroid
+				minDistance = dist
+		#TO-DO: properly weight regionCrimeScore against distance from region
+		regionCrimeScore = regionCrimeScores[closest] / minDistance 
+    	self.regionCrimeScore = regionCrimeScore
+
+    def getCrimeRegionScore(self):
+    	return self.regionCrimeScore
+
+	def getCrimeScore(self):
+		if len(self.crimes) == 0: return 0
+		return sum(self.crimes[c] for c in self.crimes)
 
     def addCrime(self, type):
     	self.crimes[type] += 1
@@ -40,7 +133,6 @@ class CrimeStreet():
     	return dist
 
 
-
 def estStreets():
 	streets = {}
 	for edge in edges.iterrows():
@@ -48,10 +140,28 @@ def estStreets():
 	    curr = CrimeStreet(e['EdgeID'], eval(e['startCoords']), eval(e['endCoords']), float(e['distance']))
 	    streets[e['EdgeID']] = curr
 	print 'established streets as CrimeStreet vars'
+	
+	print len(streets)
+
+	crimesList = []
+
 	for i, crime in crimes.iterrows():
 		e = crime['StreetMatch']
 		streets[e].addCrime(crime['Category'])
-	print 'added crimes to streets'
+		crimesList.append((eval(crime['Location']),e))
+	print 'added crimes to streets and established crimesList for k-means clustering'
+	print len(crimesList)
+
+	hotspots, assignments, reconstructionLoss = kmeans(crimesList, 10, 10)
+	print 'established 10 crime hotspot assignments using k-means clustering'
+	
+	#TO-DO: write the function below
+	#regionCrimeScores = establishRegionCrimeScore(assingments)
+		#something along the lines of sum of weighted crimes / number of of crimes in cluster
+
+	for edge, crimeStreet in streets:
+		crimeStreet.setRegionScore(regionCrimeScores)
+
 	return streets
 
 def nodeDict():
@@ -90,7 +200,7 @@ def nodeDict():
 	return edge_dict
 
 edge_dict = nodeDict()
-print sum(1.0*len(edge_dict[node]) for node in edge_dict) / len(edge_dict.keys())
+#print sum(1.0*len(edge_dict[node]) for node in edge_dict) / len(edge_dict.keys())
 
 # streets = estStreets()
 # for st in streets:
