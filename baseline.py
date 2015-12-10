@@ -1,6 +1,8 @@
-import edge_connects, math, random, collections, heapq, re, sys, time, os, random
+import edge_connects, math, random, collections, heapq, re, sys, time, os, random, datetime
 
 nodeDict = edge_connects.nodeDict()
+#dictionary from edges to list of times of known crimes (crime type, time) at that edge
+#knownCrimes = edge_connects.readKnownCrimes()
 
 class Journey():
 	def __init__(self, path, startTime) :
@@ -29,6 +31,12 @@ class Journey():
  		crimeScore = 0
  		for street in self.path:
  			crimeScore += street.getCrimeScore()
+ 		return crimeScore
+
+ 	def getKnownCrimeScore(self):
+ 		crimeScore = 0
+ 		for street in self.path:
+ 			crimeScore += street.knownCrimeScore(self.startTime)
  		return crimeScore
 
  	def printPath(self):
@@ -73,7 +81,7 @@ class PriorityQueue:
         return (None, None) # Nothing left...
 
 
-def baselineAStarSearch(start, end, startTime):
+def aStarSearch(start, end, startTime):
 	"""
 	@param start: (lat, long) coordinates of starting location
 	@param end: (lat, long) coordinates of ending location
@@ -136,12 +144,14 @@ def baselineAStarSearch(start, end, startTime):
 
 #score: product of (weighted aggregate crime risk) * (diff in distances btw proposed path and shortest path)
 
-# journey = baselineAStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
-# print ('here\'s our path')
-# journey.printPath()
-# # print(journey.path)
-# print('length: '+ str(journey.getLength()))
-# print('total crimes: '+ str(journey.getNumCrimes()))
-# print('total crime score: '+ str(journey.getTotalCrimeScore()))
+startTime = time.strptime('Friday,10/31/2014,23:30', "%A,%m/%d/%Y,%H:%M")
+formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
+journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
+print ('here\'s our path')
+journey.printPath()
+# print(journey.path)
+print('length: '+ str(journey.getLength()))
+print('total crimes: '+ str(journey.getNumCrimes()))
+print('total crime score: '+ str(journey.getKnownCrimeScore()))
 
 
