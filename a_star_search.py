@@ -4,15 +4,7 @@ from journey import Journey
 
 class AStarSearch():
 
-	"""
-	@param start: (lat, long) coordinates of starting location
-	@param end: (lat, long) coordinates of ending location
-	@param startTime: the start time of the journey
-	
-	@return: the quickest and safest possible journey that get you from start to end
 
-	startTime should be time in same format as time in crime data
-	"""
 	def __init__(self):
 		self.nodeDict = edge_connects.nodeDict()
 
@@ -35,6 +27,15 @@ class AStarSearch():
 		distance = math.sqrt((end[0] - newNode [0])*(end[0] - newNode [0]) + (end[1] - newNode [1])*(end[1] - newNode [1]))
 		return street.st_length + (distance)
 
+	"""
+	@param start: (lat, long) coordinates of starting location
+	@param end: (lat, long) coordinates of ending location
+	@param startTime: the start time of the journey
+	
+	@return: the quickest and safest possible journey that get you from start to end
+
+	startTime should be time in same format as time in crime data
+	"""
 	def algorithm(self, start, end, startTime): 
 		visitedNodes = []
 		pq = PriorityQueue()
@@ -71,17 +72,9 @@ class AStarSearch():
 					visitedNodes.append(node)
 		return None
 
+
 	def getAlgorithm(self):
 		return self.algorithm
 
-
-
-# journey = aStarSearch((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), 0)
-# print ('here\'s our path')
-# journey.printPath()
-# # print(journey.path)
-# print('length: '+ str(journey.getLength()))
-# print('total crimes: '+ str(journey.getNumCrimes()))
-# print('total crime score: '+ str(journey.getTotalCrimeScore()))
 
 

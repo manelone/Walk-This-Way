@@ -1,6 +1,9 @@
 from a_star_search import AStarSearch
 from ast import literal_eval as make_tuple
 import edge_connects, datetime, time
+from baseline import BaselineSearch
+from oracle import OracleSearch
+from standard import StandardSearch
 
 def simulateJourney(journey):
 	"""
@@ -9,8 +12,7 @@ def simulateJourney(journey):
 	crimes is an list of crimes the journey would encounter (same time, same place)
 	"""
 	crimes = []
-	t = time.strptime(journey.getStartTime(), "%A,%m/%d/%Y,%H:%M")
-	tm = datetime.datetime.fromtimestamp(time.mktime(t))
+	tm = journey.getStartTime()
 	endTime = tm + datetime.timedelta(hours=1)
 	for street in journey.getPath():
 		# need to calculate the bounds of time that journier is on this street
@@ -19,15 +21,14 @@ def simulateJourney(journey):
 
 		#endTime = tm + street.length / walkingSpeed
 		# loop through to check which crimes lie within the time bounds
-		# this is slow - we should be able to optimize
 		for crime in street.crimeList :
-			ct = time.strptime(crime[1], "%A,%m/%d/%y,%H:%M") # need to change this in edge_connects.py
+			ct = time.strptime(crime[1], "%A,%m/%d/%y,%H:%M")
 			crimeTime = datetime.datetime.fromtimestamp(time.mktime(ct))
 			if tm <= crimeTime and crimeTime <= endTime:
 				crimes += crime
 		# time = endTime
 
-	return (0, crimes) # eventually first argument shoudl be the distance
+	return (0, crimes) # eventually first argument should be the distance traveled
 
 
 def getJourneys(filename, algorithm):
@@ -44,7 +45,9 @@ def getJourneys(filename, algorithm):
 		lines = f.readlines()
 	for line in lines:
 		triple = line.split()
-		journey = algorithm(make_tuple(triple[0]), make_tuple(triple[1]), triple[2])
+		sT = time.strptime(triple[2], "%A,%m/%d/%Y,%H:%M")
+		startTime = datetime.datetime.fromtimestamp(time.mktime(sT))
+		journey = algorithm(make_tuple(triple[0]), make_tuple(triple[1]), startTime)
 		journeys.append(journey)
 	return journeys
 
@@ -59,22 +62,22 @@ def simulate(journeys):
 	numJourneys = len(journeys)
 	numSafeJouneys = 0
 	totalDistance = 0
-	totalSeverity = 0
+	totalCrimeScore = 0
 	for journey in journeys :
 		pair = simulateJourney(journey)
 		totalDistance += pair[0]
 		if len(pair[1]) == 0 : # no crime
 			numSafeJouneys += 1
-		else :
-			for crime in pair[1] :
-				totalSeverity += crime.severity
+		totalCrimeScore += journey.getTotalCrimeScore()
 
 	print "Number of journeys: " + str(numJourneys)
 	print "Number of safe journeys: " + str(numSafeJouneys)
+	print "Cumulative crime score: " + str(totalCrimeScore)
+	print "---------------------------------------------------"
 
 def main():	
-	astar = AStarSearch()
-	algorithm = astar.getAlgorithm()
+	solver = StandardSearch()
+	algorithm = solver.getAlgorithm()
 	simulate(getJourneys("journeys.txt", algorithm))
 
 if __name__ == '__main__':

@@ -26,22 +26,3 @@ class OracleSearch(AStarSearch):
 		print ('edge: ' + str(street.edgeID) + ' cost: ' + str(cost))
 		return cost
 
-def main():
-
-	search = OracleSearch().getAlgorithm()
-
-	startTime = time.strptime('Friday,10/16/2015,22:00', "%A,%m/%d/%Y,%H:%M")
-	formattedStartTime = datetime.datetime.fromtimestamp(time.mktime(startTime))
-	journey = search((37.796028, -122.44310800000001),(37.781566999999995, -122.41133899999998), formattedStartTime)
-	print ('here\'s our path')
-	journey.printPath()
-	# print(journey.path)
-	print('length: '+ str(journey.getLength()))
-	print('total crimes: '+ str(journey.getNumCrimes()))
-	print('total crime score: '+ str(journey.getTotalCrimeScore()))
-
-if __name__ == '__main__':
-	main()
-
-
-

@@ -1,6 +1,7 @@
 from pandas import pandas as pd
 import collections, math, random, sys, time, datetime
 from copy import deepcopy
+from street import CrimeStreet
 
 #weights of different types of crimes
 CRIME_TYPE_WEIGHTS = {'ROBBERY':5, 'SEX OFFENSES, FORCIBLE':6,'DRUG/NARCOTIC':2, 'KIDNAPPING':7, 'SEX OFFENSES, NON FORCIBLE':3, 'ASSAULT':9}
@@ -20,7 +21,7 @@ streets = {}
 knownCrimes = {}
 
 def getDistance(a,b):
-	return (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1])
+	return ((a[0] - b[0])**2 + (a[1] - b[1])**2)**(.5)
 
 def kmeans(crimes, K, maxIters):
 	'''
@@ -87,108 +88,6 @@ def kmeans(crimes, K, maxIters):
 	return (centroids, assignments)
 
 
-def inRange(start, end, timeString):
-	t = time.strptime(timeString, "%A,%m/%d/%y,%H:%M")
-	formattedTime = datetime.datetime.fromtimestamp(time.mktime(t))
-	if formattedTime >= start and formattedTime <= end:
-		return True
-	return False
-
-class CrimeStreet():
-    def __init__(self, edgeID, start, end, length):
-        self.edgeID = edgeID
-        self.start = start
-        self.end = end
-        self.st_length = length
-       	self.crimes = collections.Counter()
-       	self.crimeList = []
-       	self.regionCrimeScore = 0
-       	self.numCrimes = 0
-
-    #regionScore is avg of crime score of hotspot / distance of street from hotspot over all hotspots^2
-    #weighted by the distance to that hotspot
-    #regionCrimeScores is a dictionary of locations to their scores
-    def setRegionScore(self, regionCrimeScores):
-    	regionCrimeScore = 0
-    	for centroid in regionCrimeScores.keys():
-    		dist = self.distFromStreet(centroid)
-    		regionCrimeScore += regionCrimeScores[centroid]/(dist)
-		self.regionCrimeScore = regionCrimeScore*1.0/(NUM_REGIONS**2)
-
-    
-	#getTimedCrimeScore returns the sum of the regional crimes score as well as the weighted crimes
-	#that occur during a given time period surrounding the startTime
-    def getTimedCrimeScore(self, startTime):
-    	crimeScore = 0
-    	for i in range(2003,2014):
-    		diff = startTime.year - i
-    		numWeeks = diff * 72
-    		standardStartTime = startTime - datetime.timedelta(weeks=numWeeks)
-    		start = standardStartTime - datetime.timedelta(minutes=30)
-    		end = standardStartTime + datetime.timedelta(minutes=60)
-    		crimeScore = 0
-    		for crime in self.crimeList:
-    			if inRange(start, end, crime[1]):
-    				crimeScore += CRIME_TYPE_WEIGHTS[crime[0]]
-    	crimeScore /= 1.0*11
-    	return crimeScore + self.regionCrimeScore
-
-    def knownCrimeScore(self, startTime):
-    	crimeScore = 0
-    	if self in knownCrimes.keys():
-    		crimes = knownCrimes[self]
-    		start = startTime - datetime.timedelta(minutes=30)
-    		end = startTime + datetime.timedelta(minutes=60)
-    		for crime in crimes:
-    			crimeType = crime[0]
-    			crimeTime = crime[1]
-    			if crimeTime>=start and crimeTime <=end:
-    				print crime
-    				crimeScore += CRIME_TYPE_WEIGHTS[crimeType]
-    	return crimeScore
-
-
-    #returns regional crime score
-    def getregionCrimeScore(self):
-    	return self.regionCrimeScore
-
-    #returns the sum of the regional crime score and the sum of all crimes (weigthed by type) that have
-    #ever occured on that street
-    def getCrimeScore(self):
-		if self.numCrimes == 0: return 0
-		self.streetCrimeScore = sum(self.crimes[c] for c in self.crimes)
-		#print('self: ' + str(self.streetCrimeScore) + ' region: '+str(self.regionCrimeScore))
-		return self.streetCrimeScore + self.regionCrimeScore
-
-    
-	#adds a given crime to the crimes counter, the crimes list, and increments the total
-	#number of crimes seen on this street
-    def addCrime(self, crimeOccurence):
-    	self.numCrimes += 1
-    	self.crimes[crimeOccurence[0]] += CRIME_TYPE_WEIGHTS[crimeOccurence[0]]
-    	self.crimeList.append(crimeOccurence)
-
-    #calculates the distance from a given location to the street
-    def distFromStreet(self, loc):
-    	slope = (self.end[1]-self.start[1]) / (self.end[0]-self.start[0])
-    	perp_slope = -1/slope
-        #print slope, perp_slope
-    	b = self.start[1] - slope*self.start[0]
-    	b2 = loc[1] - perp_slope*loc[0]
-        #print b, b2
-    	dist_lat = (b2 + b) / (slope - perp_slope)
-    	dist_long = dist_lat * slope + b
-        if dist_lat < min([self.start[0], self.end[0]]) or \
-            dist_lat > max([self.start[0], self.end[0]]) or \
-            dist_long < min([self.start[1], self.end[1]])or \
-            dist_long > max([self.start[1], self.end[1]]): 
-            return min([math.sqrt((self.end[0]-loc[0])**2 + (self.end[1]-loc[1])**2), \
-                math.sqrt((self.start[0]-loc[0])**2 + (self.start[1]-loc[1])**2)])
-        #print dist_lat, dist_long
-    	dist = math.sqrt((dist_lat-loc[0])**2 + (dist_long-loc[1])**2)
-    	return dist
-
-
 #establishes the crimeStreets (and populates the streets dictionary) by reading
 #through the various data files
 def estStreets():
@@ -234,33 +133,33 @@ def estStreets():
 	#return streets
 
 
-#establishes a node dictionary so that intersections may be referenced as well as streets
+# returns map from node (intersection) to set of incident edges (street)
 def nodeDict():
-	edge_dict = {}
+	node_dict = {}
 	estStreets()
 	for st in streets:
 		edge = streets[st]
 		startCoords = edge.start #eval(edge['startCoords'])
 		endCoords = edge.end #eval(edge['endCoords'])
-		if startCoords[1] > -121.888 or startCoords[1] < -122.729: 
+		if startCoords[1] > -122.35  or startCoords[1] < -122.52: 
 			continue
-		if startCoords[0] > 38.5 or startCoords[0] < 37.5:
+		if startCoords[0] > 37.835 or startCoords[0] < 37.7:
 			continue
-		if endCoords[1] > -121.888 or endCoords[1] < -122.729:
+		if endCoords[1] > -122.35  or endCoords[1] < -122.52:
 			continue
-		if endCoords[0] > 38.5 or endCoords[0] < 37.5:
+		if endCoords[0] > 37.835 or endCoords[0] < 37.7:
 			continue
-		if startCoords not in edge_dict:
-			edge_dict[startCoords] = set([edge])
+		if startCoords not in node_dict:
+			node_dict[startCoords] = set([edge])
 		else:
-			edge_dict[startCoords].add(edge)
-		if endCoords not in edge_dict:
-			edge_dict[endCoords] = set([edge])
+			node_dict[startCoords].add(edge)
+		if endCoords not in node_dict:
+			node_dict[endCoords] = set([edge])
 		else:
-			edge_dict[endCoords].add(edge)
+			node_dict[endCoords].add(edge)
 
 	readKnownCrimes()
-	return edge_dict
+	return node_dict
 
 
 #creates a dictionary from CrimeStreets to a list of crime type/datetimes tuples
