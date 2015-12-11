@@ -93,7 +93,7 @@ def kmeans(crimes, K, maxIters):
 def estStreets():
 	for edge in edges.iterrows():
 	    e = edge[1]
-	    curr = CrimeStreet(e['EdgeID'], eval(e['startCoords']), eval(e['endCoords']), float(e['distance']))
+	    curr = CrimeStreet(e['EdgeID'], eval(e['startCoords']), eval(e['endCoords']))
 	    streets[e['EdgeID']] = curr
 	print 'established streets as CrimeStreet vars'
 	
@@ -109,7 +109,7 @@ def estStreets():
 
 	hotspots, assignments = kmeans(crimesList, NUM_REGIONS, 10)
 	
-	print 'established 10 crime hotspot assignments using k-means clustering'
+	print 'established' + str(NUM_REGIONS) + 'crime hotspot assignments using k-means clustering'
 	
 	hotspotCrimeScores = collections.Counter()
 	for i in range(len(assignments)):
